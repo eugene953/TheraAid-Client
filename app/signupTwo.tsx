@@ -8,22 +8,27 @@ import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
-import { clearSignup, setSignupStepTwo } from '@/redux/slices/authSlice';
+import { clearSignup, setSignupStepTwo } from '@/redux/slices/signupSlice';
 import axios from 'axios';
 import { login } from '@/redux/slices/loginSlice';
 import * as ImagePicker from 'expo-image-picker';
 import { API_URL } from '@/config';
+import { jwtDecode } from 'jwt-decode';
+
 
 const SignupTwo = () => {
 
   const dispatch = useDispatch();
   const { email, password } = useSelector((state: RootState) => state.signup);
+  
   const [username, setUsername] = useState('');
   const [phone_number, setPhone_number] = useState('');
   const [selectedGender, setSelectedGender] = useState('');
- 
+  const [isLoading, setIsLoading] = useState(false);
   const [profileImage, setProfileImage] = useState<ImagePicker.ImagePickerAsset | null>(null);
-  
+
+  const [errors, setErrors] = useState({ username: '',phone_number : '', gender: '' });
+
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -38,72 +43,83 @@ const SignupTwo = () => {
   };
 
 
-const [errors, setErrors] = useState({ username: '',phone_number : '', gender: '' });
+  const validate = () => {
+    let newErrors = { username: '', phone_number: '', gender: '' };
+    let hasError = false;
 
-const handleContinue = async () => {
-  let hasError = false;
-  let newErrors = { username: '', phone_number: '', gender: '' };
-
-  if (!username.trim()) {
-    newErrors.username = 'Full name is required';
-    hasError = true;
-  }
-
-  const phoneRegex = /^[0-9]{9,15}$/;
-  if (!phone_number.trim() || !phoneRegex.test(phone_number)) {
-    newErrors.phone_number = 'Enter a valid phone number';
-    hasError = true;
-  }
-
-  if (!selectedGender) {
-    newErrors.gender = 'Please select your gender';
-    hasError = true;
-  }
-
- setErrors(newErrors);
- 
- if (!hasError) {
-  try {
-    dispatch(setSignupStepTwo({ username, gender: selectedGender, phone_number }));
-   
-    const formData = new FormData();
-    formData.append('email', email);
-    formData.append('password', password);
-    formData.append('username', username);
-    formData.append('gender', selectedGender);
-    formData.append('phone_number', phone_number);
-
-    if (profileImage) {
-      formData.append('profile', {
-        uri: profileImage.uri,
-        name: 'profile.jpg',
-        type: 'image/jpeg', 
-      } as any); 
-      };
-
-    const response = await axios.post(`${API_URL}/api/users/register`,
-      formData, 
-      {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+    if (!username.trim()) {
+      newErrors.username = 'Full name is required';
+      hasError = true;
     }
-  );
-  alert('Registration successful!');
-    const { token } = response.data;
-    const decoded = JSON.parse(atob(token.split('.')[1])); // decode JWT payload
-    dispatch(login({ user_id: decoded.user_id, role: decoded.role }));
-    dispatch(clearSignup());
-    router.replace('/signin');
-  } catch (err) {
-    console.error(err);
-    console.log('Registration failed', 'Please try again');
-  }
 
-  }
+    const phoneRegex = /^[0-9]{9,15}$/;
+    if (!phone_number.trim() || !phoneRegex.test(phone_number)) {
+      newErrors.phone_number = 'Enter a valid phone number';
+      hasError = true;
+    }
+
+    if (!selectedGender) {
+      newErrors.gender = 'Please select your gender';
+      hasError = true;
+    }
+
+    setErrors(newErrors);
+    return hasError;
+  };
 
 
-};
+  const handleContinue = async () => {
+    if (validate()) return;
+
+    setIsLoading(true);
+    try {
+      dispatch(setSignupStepTwo({ username, phone_number, gender: selectedGender }));
+
+      const formData = new FormData();
+      formData.append('email', email);
+      formData.append('password', password);
+      formData.append('username', username);
+      formData.append('gender', selectedGender);
+      formData.append('phone_number', phone_number);
+
+      if (profileImage) {
+        formData.append('profile', {
+          uri: profileImage.uri,
+          type:'image/jpeg',
+          name: `profile_${Date.now()}.jpg`,
+        }  as unknown as Blob); 
+      }
+
+      const response = await axios.post(`${API_URL}/api/users/register`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      alert('Registration successful!');
+      const { token } = response.data;
+      const decoded: any = jwtDecode(token); // decode JWT payload
+      dispatch(login({ 
+        user_id: decoded.user_id,
+        role: decoded.role,
+        email: decoded.email, 
+        token,
+      }));
+      dispatch(clearSignup());
+      router.replace('/signin');
+    } catch(err) {
+      if (axios.isAxiosError(err)) {
+        console.error('Axios Error: ', err.message);
+        alert('Network Error: Please check your internet connection or try again later.');
+      } else {
+        console.error('Error: ', err);
+        alert('Registration failed, please try again');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+
+  };
 
   return (
     <>
@@ -175,7 +191,9 @@ const handleContinue = async () => {
     <TouchableOpacity style={styles.continue}
         onPress={handleContinue}
     >
-        <Text style={styles.continueTxt}>Register</Text>
+        <Text style={styles.continueTxt}>
+        {isLoading ? 'Registering...' : 'Register'}
+        </Text>
        </TouchableOpacity>
        
 

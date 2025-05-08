@@ -1,6 +1,7 @@
 
 import InputField from '@/components/InputField';
 import SocialLoginButton from '@/components/SocialLoginButton';
+import { API_URL } from '@/config';
 import { Colors } from '@/constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
@@ -21,10 +22,8 @@ const OTP = () => {
   }
 
 try {
-  const response = await axios.post('https://spicy-bananas-lose.loca.lt/verifyOTP', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ code: otp }),
+  const response = await axios.post(`${API_URL}/verifyOTP`, {
+  code: otp,
   });
 
   if (response.status === 200) {
@@ -37,7 +36,6 @@ try {
       Alert.alert('Error', 'Network or server error');
   }
 }
-
 
   return (
     <>

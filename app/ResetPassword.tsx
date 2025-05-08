@@ -18,7 +18,7 @@ const ResetPassword = () => {
 
  const handleSubmit =async () => {
     try {
-      const res = await axios.post('https://popular-jellyfish-17.loca.lt/generateOTP', {
+      const res = await axios.post(`${API_URL}/generateOTP`, {
         email,
       });
 

@@ -2,7 +2,7 @@
 import InputField from '@/components/InputField';
 import SocialLoginButton from '@/components/SocialLoginButton';
 import { Colors } from '@/constants/Colors';
-import { setSignupStepOne } from '@/redux/slices/authSlice';
+import { setSignupStepOne } from '@/redux/slices/signupSlice';
 import { Ionicons } from '@expo/vector-icons';
 import { router, Stack } from 'expo-router';
 import { Link } from 'expo-router';

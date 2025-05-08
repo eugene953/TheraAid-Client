@@ -1,5 +1,6 @@
 
 import InputField from '@/components/InputField';
+import { API_URL } from '@/config';
 import { Colors } from '@/constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
@@ -29,7 +30,7 @@ const [password, setPassword] = useState('');
 
     try {
       setLoading(true);
-      const response = await axios.put('https://spicy-bananas-lose.loca.lt/resetPassword', {
+      const response = await axios.put(`${API_URL}/resetPassword`, {
         password,
         confirm_password: confirmPassword,
       });

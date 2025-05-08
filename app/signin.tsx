@@ -8,6 +8,14 @@ import { Link } from 'expo-router';
 import React, { Component, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+import { useDispatch } from 'react-redux';
+import { API_URL } from '@/config';
+import { login } from '@/redux/slices/loginSlice';
+import { jwtDecode } from 'jwt-decode';
+
+
 
 const Signin = () => {
 
@@ -17,6 +25,11 @@ const [password, setPassword] = useState('');
 const [email, setEmail] = useState('');
 const [emailError, setEmailError] = useState('');
 const [passwordError, setPasswordError] = useState('');
+
+const dispatch = useDispatch();
+
+
+
 
 
 const validate = () => {
@@ -42,10 +55,39 @@ const validate = () => {
   return valid;
 };
 
-const handleLogin = () => {
-  if (validate()) {
+const handleLogin = async() => {
+  if (!validate()) return;
+  
+  try{
+    const response = await axios.post(`${API_URL}/api/users/login`, {
+      email,
+      password,
+    });
+
+    
+  const { token } = response.data;
+
+   // Save token to AsyncStorage
+   await AsyncStorage.setItem('token', token);
+
+  const decoded: any = jwtDecode(token);
+  dispatch(login({ 
+    user_id: decoded.user_id,
+    role: decoded.role,
+    email: decoded.email, 
+    token,
+   }));
+
+  // Navigating to main app
     router.dismissAll();
     router.push('/(tabs)');
+  }catch(error: any) {
+    console.error('Login failed', error.response?.data || error.message);
+    if (error.response?.status === 401 || error.response?.status === 404) {
+      alert(error.response.data?.message || 'Invalid credentials');
+    } else {
+      alert('Login failed. Please try again.');
+    }
   }
 };
 

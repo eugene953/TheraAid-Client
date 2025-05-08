@@ -1,2 +1,1 @@
-
-export const API_URL = process.env.EXPO_PUBLIC_API_URL;
+export const API_URL = 'http://192.168.34.105:3002'; 

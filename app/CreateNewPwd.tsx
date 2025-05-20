@@ -8,6 +8,7 @@ import { router, Stack } from 'expo-router';
 import { Link } from 'expo-router';
 import React, { Component, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert } from 'react-native';
+import ResetPasswordModal from '../components/Modal/ResetPasswordModal';
 
 
 const CreateNewPwd = () => {
@@ -16,6 +17,8 @@ const [showPassword, setShowPassword] = useState(false);
 const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false)
+
+  const [isModalVisible, setModalVisible] = useState(false);
 
   const handleResetPassword = async () => {
     if (!password || !confirmPassword) {
@@ -35,8 +38,8 @@ const [password, setPassword] = useState('');
         confirm_password: confirmPassword,
       });
 
-      Alert.alert('Success', response.data.message || 'Password reset successfully');
-      router.replace('/signin');
+      setModalVisible(true);
+     
     } catch (error: any) {
       console.error('Reset password error:', error);
       const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Something went wrong';
@@ -103,6 +106,14 @@ const [password, setPassword] = useState('');
       <Text style={styles.continueTxt}>{loading ? 'Please wait...' : 'Continue'}</Text>
        </TouchableOpacity>
   
+       <ResetPasswordModal
+      visible={isModalVisible}
+      onClose={() => {
+      setModalVisible(false);
+      router.dismissAll();
+      router.push('/signin'); 
+      }}
+      />
     </View>
     </>
   );

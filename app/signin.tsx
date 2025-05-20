@@ -14,6 +14,7 @@ import { useDispatch } from 'react-redux';
 import { API_URL } from '@/config';
 import { login } from '@/redux/slices/loginSlice';
 import { jwtDecode } from 'jwt-decode';
+import SigninSuccessModal from '@/components/Modal/SigninSuccessModal';
 
 
 
@@ -26,11 +27,9 @@ const [email, setEmail] = useState('');
 const [emailError, setEmailError] = useState('');
 const [passwordError, setPasswordError] = useState('');
 
+const [isModalVisible, setModalVisible] = useState(false);
+
 const dispatch = useDispatch();
-
-
-
-
 
 const validate = () => {
   let valid = true;
@@ -64,7 +63,8 @@ const handleLogin = async() => {
       password,
     });
 
-    
+    setModalVisible(true);
+
   const { token } = response.data;
 
    // Save token to AsyncStorage
@@ -78,9 +78,6 @@ const handleLogin = async() => {
     token,
    }));
 
-  // Navigating to main app
-    router.dismissAll();
-    router.push('/(tabs)');
   }catch(error: any) {
     console.error('Login failed', error.response?.data || error.message);
     if (error.response?.status === 401 || error.response?.status === 404) {
@@ -174,6 +171,14 @@ const handleLogin = async() => {
       <Text style={styles.continueTxt}>Log in</Text>
        </TouchableOpacity>
        
+       <SigninSuccessModal
+      visible={isModalVisible}
+      onClose={() => {
+      setModalVisible(false);
+      router.dismissAll();
+      router.push('/(tabs)'); 
+      }}
+      />
 
     </View>
     </>

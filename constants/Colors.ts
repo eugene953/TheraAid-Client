@@ -5,6 +5,7 @@ export const Colors = {
   lightGray: '#f0f0f0',
   gray: '#a9a9a9',
   purple: '#808080',
+  button: '#7e8cff',
 
   white: '#fff',
   background: '#F4F4F4',

@@ -14,6 +14,7 @@ import { login } from '@/redux/slices/loginSlice';
 import * as ImagePicker from 'expo-image-picker';
 import { API_URL } from '@/config';
 import { jwtDecode } from 'jwt-decode';
+import SignupSuccessModal from '@/components/Modal/SignupSuccessModal';
 
 
 const SignupTwo = () => {
@@ -26,6 +27,8 @@ const SignupTwo = () => {
   const [selectedGender, setSelectedGender] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [profileImage, setProfileImage] = useState<ImagePicker.ImagePickerAsset | null>(null);
+
+  const [isModalVisible, setModalVisible] = useState(false);
 
   const [errors, setErrors] = useState({ username: '',phone_number : '', gender: '' });
 
@@ -96,7 +99,9 @@ const SignupTwo = () => {
         },
       });
 
-      alert('Registration successful!');
+      setModalVisible(true);
+
+
       const { token } = response.data;
       const decoded: any = jwtDecode(token); // decode JWT payload
       dispatch(login({ 
@@ -105,8 +110,8 @@ const SignupTwo = () => {
         email: decoded.email, 
         token,
       }));
-      dispatch(clearSignup());
-      router.replace('/signin');
+    
+    
     } catch(err) {
       if (axios.isAxiosError(err)) {
         console.error('Axios Error: ', err.message);
@@ -196,6 +201,15 @@ const SignupTwo = () => {
         </Text>
        </TouchableOpacity>
        
+       <SignupSuccessModal
+      visible={isModalVisible}
+      onClose={() => {
+      setModalVisible(false);
+      dispatch(clearSignup());
+      router.replace('/signin'); 
+      }}
+      />
+
 
     </View>
     </>

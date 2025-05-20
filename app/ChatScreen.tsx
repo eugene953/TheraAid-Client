@@ -11,7 +11,8 @@ import {
   Keyboard,
   TextInput,
   TouchableWithoutFeedback,
-  Alert
+  Alert,
+  ScrollView
 } from 'react-native';
 import axios from 'axios';
 import { useDispatch, useSelector } from 'react-redux';
@@ -19,13 +20,17 @@ import { addMessage } from '@/redux/slices/chatSlice';
 import { RootState } from '@/redux/store';
 import { ChatMessage } from '@/types/chatTypes';
 import { Stack } from 'expo-router';
-import Header from '@/components/Header';
 import { Colors } from '@/constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
 import { jwtDecode } from 'jwt-decode';
 import { API_URL } from '@/config';
-import { ScrollView } from 'react-native-reanimated/lib/typescript/Animated';
+import { router } from 'expo-router';
+import Voice from '@react-native-voice/voice';
+import { useLocalSearchParams } from 'expo-router';
+import { setSessionId } from '@/redux/slices/chatSessionSlice';
+import Header from '@/components/Headers/Header';
+
 
 type JWTPayload = {
   id: number;
@@ -41,11 +46,51 @@ const ChatScreen = () => {
 
   const dispatch = useDispatch();
   const { messages } = useSelector((state: RootState) => state.chat);
+  const auth = useSelector((state: RootState) => state.auth);
+  const sessionId = useSelector((state: RootState) => state.chatSession.sessionId);
 
   let flatListRef: FlatList<any> | null = null;
+  
+  const [isRecording, setIsRecording] = useState(false);
 
+  const onSpeechResults = (event: any) => {
+    const spokenText = event.value[0];
+    setInput(spokenText); // Insert text into input box automatically
+  };
 
-  const auth = useSelector((state: RootState) => state.auth);
+  const onSpeechError = (error: any) => {
+    console.error('Speech error:', error);
+    Alert.alert('Voice Error', 'Failed to recognize speech.');
+  };
+
+  const handleMicPress = async () => {
+    try {
+      if (isRecording) {
+        await Voice.stop();
+        setIsRecording(false);
+      } else {
+        await Voice.start('en-US'); // Use 'en-US' for English/Pidgin. Local dialects may need 'pcm' for raw audio + cloud processing.
+        setIsRecording(true);
+      }
+    } catch (error) {
+      console.error('Mic press error:', error);
+    }
+  };
+
+  useEffect(() => {
+    Voice.onSpeechResults = onSpeechResults;
+    Voice.onSpeechError = onSpeechError;
+    return () => {
+      Voice.destroy().then(Voice.removeAllListeners);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (flatListRef && messages.length > 0) {
+      flatListRef.scrollToEnd({ animated: true });
+    }
+  }, [messages]);
+  
 
   useEffect(() => {
     if (auth.token) {
@@ -60,6 +105,18 @@ const ChatScreen = () => {
     }
   }, [auth.token]);
 
+  // set session chat when user navigate from history
+  const params = useLocalSearchParams();
+  const navigationSessionId = params.session_id ? parseInt(params.session_id as string, 10) : null;
+  
+  useEffect(() => {
+    if (navigationSessionId && navigationSessionId !== sessionId) {
+      dispatch(setSessionId(navigationSessionId));
+    }
+  }, [navigationSessionId]);
+  
+// #fetch message base on session id when session id changes#
+
   const sendMessage = async () => {
     if (!input.trim()) return;
 
@@ -68,30 +125,46 @@ const ChatScreen = () => {
       return;
     }
 
+    if (sessionId === null) {
+      Alert.alert('Error', 'Session ID is missing.');
+      return;
+    }    
+
+    if (!sessionId) {
+      Alert.alert('session_id is required' );
+    }
+
     setLoading(true);
 
     const userMessage: ChatMessage = {
       user_id: userId,
       message: input,
       response: '',
+      session_id: sessionId,
     };
 
     dispatch(addMessage(userMessage));
 
     try {
-      const res = await axios.post(`${API_URL}/api/chat`,
+      const res = await axios.post(  `${API_URL}/api/chat`,
         {
           user_id: userId,
           message: input,
+          session_id: sessionId,
         },
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            
           },
         }
-        
       );
+
+      if(res.data.inactive) {
+        Alert.alert(
+          "Session Inactive",
+          "This chat session has been active for more than 12 hours. Please start a new session, or you can continue using this session within the next 3 hours."
+        );
+      }
 
       const responseText = res.data.reply;
 
@@ -99,6 +172,7 @@ const ChatScreen = () => {
         user_id: 0,
         message: '',
         response: responseText,
+        session_id: sessionId,
       };
 
       dispatch(addMessage(botMessage));
@@ -123,41 +197,44 @@ const ChatScreen = () => {
         style={styles.container}
         keyboardVerticalOffset={80}
       >
+        
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.inner}>
          
-          <ScrollView style={styles.inner}>
-          <View style={styles.chatContainer}>
-  <FlatList
-    data={messages}
-    keyExtractor={(item, index) => item.id?.toString() || index.toString()}
-    ListHeaderComponent={() => (
-      <View style={styles.background}>
-        <Image source={require('../assets/images/ChatScreen.png')} style={styles.image} />
-        <Text style={styles.description}>Capabilities</Text>
-      </View>
-    )}
-    renderItem={({ item }) => (
-      <View
-        style={[
-          styles.messageContainer,
-          item.user_id === userId ? styles.myMessage : styles.botMessage,
-        ]}
-      >
-        {item.user_id === userId ? (
-          <Text style={styles.myMessageText}>{item.message}</Text>
-        ) : (
-          <Text style={styles.botMessageText}>{item.response}</Text>
-        )}
-      </View>
-    )}
-    contentContainerStyle={styles.messageList}
-    showsVerticalScrollIndicator={false}
-    onContentSizeChange={() => {
-      flatListRef?.scrollToEnd({ animated: true });
-    }}
-    ref={(ref) => (flatListRef = ref)}
-  />
-</View>
+              <FlatList
+                data={messages}
+                keyExtractor={(item, index) => item.id?.toString() || index.toString()}
+                ListHeaderComponent={() => (
+                  <View style={styles.header}>
+                    <Image
+                      source={require('../assets/images/ChatScreen.png')}
+                      style={styles.image}
+                    />
+                    <Text style={styles.description}>Capabilities</Text>
+                  </View>
+                )}
+                renderItem={({ item }) => (
+                  <View
+                    style={[
+                      styles.messageContainer,
+                      item.user_id === userId ? styles.myMessage : styles.botMessage,
+                    ]}
+                  >
+                    {item.user_id === userId ? (
+                      <Text style={styles.myMessageText}>{item.message}</Text>
+                    ) : (
+                      <Text style={styles.botMessageText}>{item.response}</Text>
+                    )}
+                  </View>
+                )}
+                contentContainerStyle={styles.messageList}
+                showsVerticalScrollIndicator={false}
+                onContentSizeChange={() => {
+                  flatListRef?.scrollToEnd({ animated: true });
+                }}
+                ref={(ref) => (flatListRef = ref)}
+              />
+           
 
             <View style={styles.inputContainer}>
               <TextInput
@@ -175,9 +252,14 @@ const ChatScreen = () => {
                 }
               />
               <View style={styles.chatButtons}>
-                <TouchableOpacity style={styles.iconButton}>
-                  <Ionicons name="mic" size={20} color="white" />
-                </TouchableOpacity>
+              <TouchableOpacity style={styles.iconButton} onPress={handleMicPress}>
+             <Ionicons
+              name={isRecording ? 'mic-off' : 'mic'}
+              size={20}
+              color="white"
+                />
+              </TouchableOpacity>
+
                 <TouchableOpacity
                   style={styles.iconButton}
                   onPress={sendMessage}
@@ -192,7 +274,7 @@ const ChatScreen = () => {
                 </TouchableOpacity>
               </View>
             </View>
-          </ScrollView>
+          </View>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
     </>
@@ -201,9 +283,10 @@ const ChatScreen = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.white },
-  inner: { flex: 1, padding: 16,  },
-  background:{
-
+  inner: { flex: 1, padding: 16, justifyContent: 'flex-start' },
+  header: {
+    alignItems: 'center',
+    marginBottom: 20,
   },
   image: {
     width: 120,
@@ -240,13 +323,11 @@ const styles = StyleSheet.create({
   botMessage: {
     backgroundColor: Colors.lightGray,
     alignSelf: 'flex-start',
-    textDecorationColor: '#212121',
   },
   botMessageText: {
     color: Colors.primary,
     fontSize: 16,
   },
-  messageText: {  },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -254,16 +335,18 @@ const styles = StyleSheet.create({
     borderTopColor: '#ddd',
     paddingVertical: 8,
     paddingHorizontal: 8,
-    
   },
   textBar: {
     flex: 1,
     borderColor: '#ccc',
     borderWidth: 1,
     borderRadius: 20,
-    paddingHorizontal: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
     backgroundColor: '#fff',
     marginRight: 8,
+    fontSize: 16,
+    maxHeight: 100,
   },
   chatButtons: {
     flexDirection: 'row',

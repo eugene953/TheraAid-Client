@@ -29,34 +29,18 @@ export interface NotificationType {
   timestamp: string;
 }
 
+export type ScreenRootParamList = {
+  WelcomeScreen: undefined;
+  HomeScreen: undefined;
+  
+};
 
 
+export type history  = {
+  session_id: number;
+  start_time: string;
+  date: string;
+  message: string;
+};
 
-export interface ProductType {
-  id: number;
-  title: string;
-  price: number;
-  description: string;
-  images: string[];
-  category: Category;
-}
 
-interface Category {
-  id: number;
-  name: string;
-  image: string;
-}
-
-export interface CategoryType {
-  id: number;
-  name: string;
-  image: string;
-}
-
-export interface CartItemType {
-  id: number;
-  title: string;
-  price: number;
-  quantity: number;
-  image: string;
-}

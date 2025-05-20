@@ -8,14 +8,18 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 
-const HeaderNotifications = () => {
+const HeaderHistory = () => {
     const insets = useSafeAreaInsets();
 
     return (
         <View style={[styles.container, {paddingTop: insets.top}]}>
-          <Image source={require('../assets/images/splash-icon.png')} style={styles.logo} /> 
+          <Image source={require('../../assets/images/splash-icon.png')} style={styles.logo} /> 
            
-            <Text style={styles.header}>Notifications</Text>
+            <Text style={styles.header}>History</Text>
+            <View style={styles.headerIcon}>
+            <Ionicons name='search-outline' size={24} color={Colors.primary} />
+            <Ionicons name='trash-outline' size={24} color={Colors.primary} />
+            </View>
            
           
         </View>
@@ -37,7 +41,7 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
     },
 header:{
-left: -90,
+left: 20,
 fontSize:23,
 fontWeight:'bold',
 },
@@ -46,7 +50,8 @@ flexDirection: 'row',
 gap:10,
 }
 
+
 });
 
 //make this component available to the app
-export default HeaderNotifications;
+export default HeaderHistory;

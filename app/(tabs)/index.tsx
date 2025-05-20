@@ -2,17 +2,56 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity } from 'react-native';
 import axios from 'axios'
-import { ProductType } from '@/types/type';
 import { Stack } from 'expo-router';
-import Header from '@/components/Header';
+
 import { Colors } from '@/constants/Colors';
 import Animated, { FadeInRight } from 'react-native-reanimated';
 import { router } from 'expo-router';
+import { useDispatch, useSelector } from 'react-redux';
+import { setSessionId } from '@/redux/slices/chatSessionSlice';
 
-type Props = {}
+import { jwtDecode } from 'jwt-decode';
+import { API_URL } from '@/config';
+import { RootState } from '@/redux/store';
+import Header from '@/components/Headers/Header';
 
-const HomeScreen = (props: Props) => {
+type JWTPayload = {
+  id: number;
+  role: 'user' | 'admin';
+};
+
+const HomeScreen = () => {
   
+  const dispatch = useDispatch();
+  const auth = useSelector((state: RootState) => state.auth);
+
+
+  const startChatSession = async () => {
+    try {
+      if (!auth.token) {
+        alert('Not authenticated. Please log in.');
+        return;
+      }
+      const decoded = jwtDecode<JWTPayload>(auth.token);
+    const userId = decoded.id;
+
+    const res = await axios.post(`${API_URL}/startChatSession`, {
+      user_id: userId,  // Pass decoded user_id
+    }, {
+      headers: {
+        Authorization: `Bearer ${auth.token}`,  // Use token in the header
+      },
+    });
+
+    const sessionId = res.data.session.session_id;
+    dispatch(setSessionId(sessionId));  // Store the session ID in Redux
+    router.push('/ChatScreen');  
+  } catch (error) {
+    console.error('Failed to start session', error);
+    alert('Failed to start chat session. Please try again.');
+  }
+};
+
 
     return (
         <>
@@ -30,7 +69,7 @@ const HomeScreen = (props: Props) => {
          </View>
          <TouchableOpacity
     style={styles.continue}
-    onPress={() => router.push('/ChatScreen')}
+  onPress={startChatSession}
     >
     <Text style={styles.continueTxt} >Start Chat</Text>
    

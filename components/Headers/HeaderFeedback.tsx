@@ -1,22 +1,25 @@
 
 import { Colors } from '@/constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import React, { Component } from 'react';
 import { Image } from 'react-native';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Feedback from '../../app/Dropdown/Feedback';
 
 
-const HeaderAccount = () => {
+const HeaderFeedback = () => {
     const insets = useSafeAreaInsets();
 
     return (
         <View style={[styles.container, {paddingTop: insets.top}]}>
-          <Image source={require('../assets/images/splash-icon.png')} style={styles.logo} /> 
+      <TouchableOpacity style={styles.arrow}
+      onPress={() => router.back()}>
+        <Ionicons name='arrow-back' size={24} color={Colors.primary} />
+      </TouchableOpacity>
            
-            <Text style={styles.header}>Account</Text>
-                
+            <Text style={styles.header}>Feedback</Text>      
           
         </View>
     );
@@ -31,19 +34,26 @@ const styles = StyleSheet.create({
        top: 20,
        backgroundColor: Colors.white,
     },
+    arrow:{
+        top:5,
+        left:5,
+        },
     logo: {
     width: 25,
     height: 25,
     resizeMode: 'contain',
     },
 header:{
-left: -120,
+left: -100,
 fontSize:23,
 fontWeight:'bold',
 },
+headerIcon:{
+flexDirection: 'row',
+gap:10,
+}
 
 
 });
 
-//make this component available to the app
-export default HeaderAccount;
+export default HeaderFeedback;

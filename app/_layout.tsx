@@ -6,10 +6,11 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import 'react-native-reanimated';
 import { Provider } from 'react-redux';
-import store from '@/redux/store';
+import store, { persistor } from '@/redux/store';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
 import CustomSplash from './SplashScreen';
+import { PersistGate } from 'redux-persist/integration/react';
 
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -41,6 +42,7 @@ export default function RootLayout() {
 
   return (
    <Provider store={store}>
+     <PersistGate loading={null} persistor={persistor}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="OnboardingOne" options={{ presentation: 'modal' }} />
@@ -62,6 +64,7 @@ export default function RootLayout() {
         <Stack.Screen name="About" options={{ presentation: 'modal' }} />
         <Stack.Screen name="Logout" options={{ presentation: 'modal' }} />
       </Stack>
+      </PersistGate>
      </Provider>
      
   );

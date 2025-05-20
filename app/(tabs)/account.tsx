@@ -1,27 +1,117 @@
-import HeaderAccount from '@/components/HeaderAccount';
+import HeaderAccount from '@/components/Headers/HeaderAccount';
 import { Colors } from '@/constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
 import { Link, Stack } from 'expo-router';
-import React, { Component } from 'react';
-import { View, Text, StyleSheet, Pressable, TouchableOpacity } from 'react-native';
+import React, { Component, useEffect } from 'react';
+import { View, Text, StyleSheet, Pressable, TouchableOpacity, Image } from 'react-native';
+import { Modal } from 'react-native';
+import { useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+ 
+import { useNavigation } from '@react-navigation/native';
+import { logout } from '@/redux/slices/loginSlice';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { ScreenRootParamList, UserProps } from '@/types/type';
+import { RootState } from '@/redux/store';
+import axios from 'axios';
+import { API_URL } from '@/config';
+import { Alert } from 'react-native';
+import { jwtDecode } from 'jwt-decode';
+import { ScrollView } from 'react-native';
+
+type JWTPayload = {
+  id: number;
+  role: 'user' | 'admin';
+};
+
+type NavigationProp = StackNavigationProp<ScreenRootParamList>;
+
+type User = {
+  username: string;
+  email: string;
+  profile: string;
+  phone_number: string;
+  gender: string;
+};
 
 const account = () => {
+
+const dispatch = useDispatch();
+const navigation = useNavigation<NavigationProp>();
+
+const [modalVisible, setModalVisible] = useState(false);
+
+const [token, setToken] = useState<string | null>(null);
+const [userId, setUserId] = useState<number | null>(null);
+
+const auth = useSelector((state: RootState) => state.auth);
+
+const [user, setUser] = useState<User>({
+  username: '',
+  email: '',
+  profile: '',
+  phone_number: '',
+  gender: '',
+});
+
+useEffect(() => {
+  if (auth.token) {
+    try {
+      const decoded = jwtDecode<JWTPayload>(auth.token);
+      setUserId(decoded.id);
+      setToken(auth.token);
+    } catch (error) {
+      console.error('Token decoding failed:', error);
+      Alert.alert('Error', 'Session invalid. Please log in again.');
+    }
+  }
+}, [auth.token]);
+
+useEffect(() => {
+  const fetchUser = async () => {
+    if (userId && token) {
+      try {
+        const response = await axios.get(`${API_URL}/user/${userId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setUser(response.data);
+      } catch (error) {
+        console.error('Failed to fetch user:', error);
+      }
+    }
+  };
+
+  fetchUser();
+}, [userId, token]);
+
   return (
     <>
     <Stack.Screen options={{headerShown: true, header: () => <HeaderAccount/> }} />
      
-     <View style={styles.container}>
+
+     <ScrollView contentContainerStyle={styles.container}>
 
  {/* Profile Section */}
     <View style={styles.profileSection}>
     <View style={styles.iconContainer}>
-    <Ionicons name="person" size={60}  color={Colors.gray}  />
+    {user.profile ? (
+              <Image
+                source={{ uri: user.profile }}
+                style={{ width: 80, height: 80, borderRadius: 50 }}
+              />
+            ) : (
+              <Ionicons name="person" size={60} color={Colors.gray} />
+            )}
     </View>
 <View style={styles.profileText}>
 <View >
-   <Text style={styles.title}>Nfoua Eugene</Text>
-   <Text style={styles.subtitle}>nfouaeugene953@gmail.com</Text>
+   <Text style={styles.title}>{user.username}</Text>
+   <Text style={styles.subtitle}>{user.email}</Text>
+   <Link href={"Account/PersonInfo" as any} asChild>
    <Ionicons style={styles.forward} name="chevron-forward" size={24} color="black" />
+   </Link>
    </View>
    </View>
    </View>
@@ -78,13 +168,7 @@ const account = () => {
     </View>
     </View>
     <View style={styles.sectionContent}>
-    <Link href={"Account/Feedback" as any} asChild>
-    <Pressable style={styles.row}>
-    <Ionicons name="chatbox-ellipses-outline" size={24} color="black" />
-      <Text style={styles.rowText}>Feedback</Text>
-      <Ionicons style={styles.forwardMenu} name="chevron-forward" size={24} color="black" />
-    </Pressable>
-    </Link>
+  
     <Link href={"Account/HelpCenter" as any} asChild>
     <Pressable style={styles.row}>
     <Ionicons name="help-circle-outline" size={24} color="black" />
@@ -109,23 +193,62 @@ const account = () => {
     </Pressable>
     </Link>
 
-    <Link href={"Account/Logout" as any} asChild>
-    <Pressable style={styles.row}>
-    <Ionicons name="log-out-outline" size={24} color="black" />
-      <Text style={styles.rowText}>Logout</Text>
-    </Pressable>
-    </Link>
+    <Pressable style={styles.row} onPress={() => setModalVisible(true)}>
+  <Ionicons name="log-out-outline" size={24} color="black" />
+  <Text style={styles.rowText}>Logout</Text>
+</Pressable>
    
+
+{/* handle logout functionality*/}
+<Modal
+  transparent
+  animationType="slide"
+  visible={modalVisible}
+  onRequestClose={() => setModalVisible(false)}
+>
+  <View style={{ flex: 1,justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.3)'}}>
+    <View style={{   backgroundColor: Colors.white, padding: 20, borderTopLeftRadius: 20,borderTopRightRadius: 20,alignItems: 'center'}}>
+      <Text style={{ color: 'red', fontSize: 18, fontWeight: 'bold' }}>Logout</Text>
+      <Text style={{ marginVertical: 20 }}>Are you sure you want to log out?</Text>
+      
+      <View style={{ flexDirection: 'row', gap: 10 }}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: '#e0e0e0', padding: 12, borderRadius: 30, alignItems: 'center' }}
+          onPress={() => setModalVisible(false)} >
+          <Text style={{ color: Colors.primary }}>Cancel</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={{ flex: 1, backgroundColor: '#7e8cff', padding: 12, borderRadius: 30, alignItems: 'center'}}
+          onPress={() => {
+            setModalVisible(false);
+            dispatch(logout());
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'WelcomeScreen' }],
+            });
+        
+            console.log('User logged out');
+            
+          }}
+        >
+          <Text style={{ color: 'white' }}>Yes, Logout</Text>
+        </TouchableOpacity>
+      </View>
     </View>
+  </View>
+</Modal>
+
     </View>
+    </ScrollView>
     </>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
-    backgroundColor: Colors.white, 
+    padding: 20,
+    backgroundColor: Colors.white,
+    paddingTop: 30,
+    minHeight: '100%', 
 },
 profileSection:{
   top: 10,
@@ -135,8 +258,8 @@ profileSection:{
 },
 iconContainer: {
   backgroundColor: '#f0f0f0',
-  padding: 12,
-  borderRadius: 45,
+  padding: 5,
+  borderRadius: 50,
   marginRight: 16,
 },
 profileText:{
@@ -154,7 +277,7 @@ subtitle: {
 },
 forward:{
   top:-20,
-  marginLeft: 190,
+  marginLeft: 170,
 },
 forwardMenu:{
  

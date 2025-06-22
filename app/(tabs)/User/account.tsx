@@ -1,4 +1,4 @@
-import HeaderAccount from '@/components/Headers/HeaderAccount';
+
 import { Colors } from '@/constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
 import { Link, Stack } from 'expo-router';
@@ -18,6 +18,7 @@ import { API_URL } from '@/config';
 import { Alert } from 'react-native';
 import { jwtDecode } from 'jwt-decode';
 import { ScrollView } from 'react-native';
+import HeaderAccount from '@/components/Headers/HeaderAccount';
 
 type JWTPayload = {
   id: number;
@@ -89,7 +90,6 @@ useEffect(() => {
   return (
     <>
     <Stack.Screen options={{headerShown: true, header: () => <HeaderAccount/> }} />
-     
 
      <ScrollView contentContainerStyle={styles.container}>
 
@@ -123,7 +123,7 @@ useEffect(() => {
     <Ionicons name="star" size={60}  color='gold'/>
     </View>
 
-    <Link href={"Account/About" as any} asChild>
+    <Link href={"Account/Payment" as any} asChild>
     <TouchableOpacity style={styles.paymentText}>
    <Text style={styles.title2}>Make Payment</Text>
    <Text style={styles.subtitle2}>Enjoy all benefits without restrictions</Text>

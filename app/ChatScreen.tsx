@@ -16,20 +16,22 @@ import {
 } from 'react-native';
 import axios from 'axios';
 import { useDispatch, useSelector } from 'react-redux';
-import { addMessage } from '@/redux/slices/chatSlice';
+import { addMessage, clearMessages } from '@/redux/slices/chatSlice';
 import { RootState } from '@/redux/store';
 import { ChatMessage } from '@/types/chatTypes';
 import { Stack } from 'expo-router';
 import { Colors } from '@/constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
-import * as SecureStore from 'expo-secure-store';
 import { jwtDecode } from 'jwt-decode';
 import { API_URL } from '@/config';
-import { router } from 'expo-router';
 import Voice from '@react-native-voice/voice';
 import { useLocalSearchParams } from 'expo-router';
 import { setSessionId } from '@/redux/slices/chatSessionSlice';
 import Header from '@/components/Headers/Header';
+import ShareMessageModal from '@/components/Modal/ShareMessageModal';
+import * as Clipboard from 'expo-clipboard';
+//import { fetchMessages } from '@/redux/slices/chatSlice';
+
 
 
 type JWTPayload = {
@@ -43,6 +45,11 @@ const ChatScreen = () => {
   const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState<number | null>(null);
   const [token, setToken] = useState<string | null>(null);
+
+  const [selectedMessage, setSelectedMessage] = useState<string | null>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [touchedMessageIndex, setTouchedMessageIndex] = useState<number | null>(null);
+
 
   const dispatch = useDispatch();
   const { messages } = useSelector((state: RootState) => state.chat);
@@ -114,6 +121,62 @@ const ChatScreen = () => {
       dispatch(setSessionId(navigationSessionId));
     }
   }, [navigationSessionId]);
+
+  // FETCH MESSAGES when sessionId changes
+ useEffect(() => {
+  const fetchMessages = async () => {
+    if (!auth.token || !sessionId) return;
+
+    try {
+      const response = await axios.get(`${API_URL}/chat/messages/${sessionId}`, {
+        headers: {
+          Authorization: `Bearer ${auth.token}`,
+        },
+      });
+
+      dispatch(clearMessages());
+
+      response.data.messages.forEach((msg: any) => {
+        // Add the user message
+        const userMessage: ChatMessage = {
+          user_id: msg.user_id,
+          message: msg.message,
+          response: '',
+          session_id: msg.session_id,
+          timestamp: msg.timestamp,
+        };
+        dispatch(addMessage(userMessage));
+
+        // Add the bot response
+        if (msg.response && msg.response.trim() !== '') {
+          const botMessage: ChatMessage = {
+            user_id: 0, // 0 indicates bot
+            message: '',
+            response: msg.response,
+            session_id: msg.session_id,
+            timestamp: msg.timestamp,
+          };
+          dispatch(addMessage(botMessage));
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      Alert.alert('Could not load previous messages.');
+    }
+  };
+
+  fetchMessages();
+}, [sessionId, auth.token]);
+
+
+
+useEffect(() => {
+  return () => {
+    dispatch(clearMessages()); 
+  };
+}, []);
+
+
   
 // #fetch message base on session id when session id changes#
 
@@ -213,20 +276,59 @@ const ChatScreen = () => {
                     <Text style={styles.description}>Capabilities</Text>
                   </View>
                 )}
-                renderItem={({ item }) => (
-                  <View
-                    style={[
-                      styles.messageContainer,
-                      item.user_id === userId ? styles.myMessage : styles.botMessage,
-                    ]}
-                  >
-                    {item.user_id === userId ? (
-                      <Text style={styles.myMessageText}>{item.message}</Text>
-                    ) : (
-                      <Text style={styles.botMessageText}>{item.response}</Text>
-                    )}
-                  </View>
-                )}
+
+    renderItem={({ item, index }) => {
+    const isTouched = touchedMessageIndex === index;
+   return (
+    <View>
+      {/* User Message (if exists) */}
+      {item.message && (
+        <TouchableOpacity
+          onPress={() => setTouchedMessageIndex(isTouched ? null : index)}
+          activeOpacity={0.8}
+          style={[styles.messageContainer, styles.myMessage]}
+        >
+          <Text style={styles.myMessageText}>{item.message}</Text>
+        </TouchableOpacity>
+      )}
+
+      {/* Bot Response (if exists) */}
+      {item.response && (
+        <TouchableOpacity
+          onPress={() => setTouchedMessageIndex(isTouched ? null : index)}
+          activeOpacity={0.8}
+          style={[styles.messageContainer, styles.botMessage]}
+        >
+          <Text style={styles.botMessageText}>{item.response}</Text>
+
+          {/* Show copy/share icons if touched */}
+          {isTouched && (
+            <View style={styles.iconContainer}>
+              <TouchableOpacity
+                onPress={() => {
+                  Clipboard.setStringAsync(item.response);
+                  Alert.alert('Copied to clipboard');
+                }}
+              >
+                <Ionicons name="copy-outline" size={18} color="#201D67" style={styles.icon} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => {
+                  setSelectedMessage(item.response);
+                  setShowShareModal(true);
+                }}
+              >
+                <Ionicons name="share-social-outline" size={18} color="#201D67" style={styles.icon} />
+              </TouchableOpacity>
+              </View>
+              )}
+              </TouchableOpacity>
+              )}
+              </View>
+              );
+              }}
+
                 contentContainerStyle={styles.messageList}
                 showsVerticalScrollIndicator={false}
                 onContentSizeChange={() => {
@@ -277,7 +379,16 @@ const ChatScreen = () => {
           </View>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
+
+        <ShareMessageModal
+  visible={showShareModal}
+  onClose={() => setShowShareModal(false)}
+  message={selectedMessage || ''}
+/>
     </>
+
+  
+
   );
 };
 
@@ -336,6 +447,18 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 8,
   },
+  iconContainer: {
+  flexDirection: 'row',
+  position: 'absolute',
+  right: 10,
+  bottom: 10,
+  gap: 10,
+},
+icon: {
+  padding: 5,
+  backgroundColor: '#fff',
+  borderRadius: 10,
+},
   textBar: {
     flex: 1,
     borderColor: '#ccc',

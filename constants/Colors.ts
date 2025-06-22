@@ -7,20 +7,10 @@ export const Colors = {
   purple: '#808080',
   button: '#7e8cff',
 
+  red: '#ff8c8c',
   white: '#fff',
   background: '#F4F4F4',
   highlight: '#F4CE14',
 
-  
-  light: {
-    primary: '#...',
-    secondary: '#...',
-    lightGray: '#...',
-  },
-  dark: {
-    primary: '#...',
-    secondary: '#...',
-    lightGray: '#...',
-  
-  }
+ 
 }

@@ -16,8 +16,11 @@ export const chatSessionSlice = createSlice({
     setSessionId: (state, action: PayloadAction<number>) => {
       state.sessionId = action.payload;
     },
+    clearSession: (state) => {
+      state.sessionId = 0;
+    }
   },
 });
 
-export const { setSessionId } = chatSessionSlice.actions;
+export const { setSessionId, clearSession } = chatSessionSlice.actions;
 export default chatSessionSlice.reducer;

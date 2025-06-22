@@ -45,6 +45,8 @@ export default function RootLayout() {
      <PersistGate loading={null} persistor={persistor}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)/User" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)/Admin" options={{ headerShown: false }} />
         <Stack.Screen name="OnboardingOne" options={{ presentation: 'modal' }} />
         <Stack.Screen name="OnboardingTwo" options={{ presentation: 'modal' }} />
         <Stack.Screen name="OnboardingThree" options={{ presentation: 'modal' }} />
@@ -58,11 +60,21 @@ export default function RootLayout() {
         <Stack.Screen name="PersonInfo" options={{ presentation: 'modal' }} />
         <Stack.Screen name="Security" options={{ presentation: 'modal' }} />
         <Stack.Screen name="Feedback" options={{ presentation: 'modal' }} />
+         <Stack.Screen name="SetReminder" options={{ presentation: 'modal' }} />
         <Stack.Screen name="HelpCenter" options={{ presentation: 'modal' }} />
         <Stack.Screen name="Payment" options={{ presentation: 'modal' }} />
         <Stack.Screen name="PrivacyPolicy" options={{ presentation: 'modal' }} />
         <Stack.Screen name="About" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="homeScreen" options={{ presentation: 'modal' }} />
         <Stack.Screen name="Logout" options={{ presentation: 'modal' }} />
+
+        <Stack.Screen name="Home" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="add-admin" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="add-user" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="all-users" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="reminders" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="feedback" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="user-detail" options={{ presentation: 'modal' }} />
       </Stack>
       </PersistGate>
      </Provider>

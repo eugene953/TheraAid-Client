@@ -1,5 +1,14 @@
 #SET "PATH=C:\Program Files\nodejs;%PATH%"
 export PATH="/c/Program Files/nodejs:$PATH"
+// admin redentail to login
+admin:
+{
+    
+    "admin_name": "Ayuk Eta",
+    "email":"ayuk545@gmail.com",
+    "password": "Eugene@953"
+  
+}
 
 # Welcome to your Expo app 👋
 

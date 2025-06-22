@@ -1,7 +1,7 @@
 import { Colors } from '@/constants/Colors';
 import { Icon } from '@/constants/Icon';
-import React, { Component } from 'react';
-import { View, Text, StyleSheet, Pressable, GestureResponderEvent } from 'react-native';
+import React from 'react';
+import { Text, StyleSheet, Pressable, GestureResponderEvent } from 'react-native';
 
 type RouteName = keyof typeof Icon;
 

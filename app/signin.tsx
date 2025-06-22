@@ -5,18 +5,22 @@ import { Colors } from '@/constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
 import { router, Stack } from 'expo-router';
 import { Link } from 'expo-router';
-import React, { Component, useState } from 'react';
+import React, { Component, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { API_URL } from '@/config';
 import { login } from '@/redux/slices/loginSlice';
 import { jwtDecode } from 'jwt-decode';
 import SigninSuccessModal from '@/components/Modal/SigninSuccessModal';
+import { RootState } from '@/redux/store';
 
-
+type JWTPayload = {
+  id: number;
+  role: 'user' | 'admin';
+};
 
 const Signin = () => {
 
@@ -30,6 +34,20 @@ const [passwordError, setPasswordError] = useState('');
 const [isModalVisible, setModalVisible] = useState(false);
 
 const dispatch = useDispatch();
+const auth = useSelector((state: RootState) => state.auth);
+
+useEffect(() => {
+  if (auth.token) {
+    try {
+      const decoded = jwtDecode<JWTPayload>(auth.token);
+      if (decoded.role === 'admin') {
+        router.replace('/(tabs)/Admin/home'); 
+      }
+    } catch (error) {
+      console.error('Invalid token', error);
+    }
+  }
+}, [auth.token]);
 
 const validate = () => {
   let valid = true;
@@ -176,7 +194,7 @@ const handleLogin = async() => {
       onClose={() => {
       setModalVisible(false);
       router.dismissAll();
-      router.push('/(tabs)'); 
+      router.push('/(tabs)/User/homeScreen'); 
       }}
       />
 

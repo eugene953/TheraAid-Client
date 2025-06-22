@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity } from 'react-native';
 import axios from 'axios'
 import { Stack } from 'expo-router';
@@ -24,7 +24,6 @@ const HomeScreen = () => {
   
   const dispatch = useDispatch();
   const auth = useSelector((state: RootState) => state.auth);
-
 
   const startChatSession = async () => {
     try {
@@ -55,9 +54,9 @@ const HomeScreen = () => {
 
     return (
         <>
-        <Stack.Screen options={{headerShown: true,header: () => <Header/> }} />
+        <Stack.Screen options={{headerShown: true, header: () => <Header/> }} />
         <View style={styles.container}>
-            <Image source={require('../../assets/images/splash-icon.png')} style={styles.image} />
+            <Image source={require('../../../assets/images/splash-icon.png')} style={styles.image} />
     
      <View style={styles.wrapper}>
      <View style={styles.wrapperText}>

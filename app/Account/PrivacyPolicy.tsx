@@ -15,7 +15,6 @@ const PrivacyPolicy = () => {
     contentContainerStyle={styles.contentContainer}
      showsVerticalScrollIndicator={false}
      >
-      <Text style={styles.title}>TheraAid Privacy Policy</Text>
 
       <Text style={styles.paragraph}>
         At TheraAid, we respect and protect the privacy of our users. This Privacy Policy outlines the types of personal information we collect, how we use it, and how we protect your information.

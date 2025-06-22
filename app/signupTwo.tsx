@@ -70,7 +70,6 @@ const SignupTwo = () => {
     return hasError;
   };
 
-
   const handleContinue = async () => {
     if (validate()) return;
 

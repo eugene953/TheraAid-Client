@@ -1,15 +1,18 @@
+
 import { MyTabBar } from '@/components/TabBar';
 import { Tabs } from 'expo-router';
 import React from 'react';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { StyleSheet } from 'react-native';
 export default function TabLayout() {
 
+
   return (
+     <GestureHandlerRootView style={styles.container}>
     <Tabs  screenOptions={{ headerShown: false}}
-    tabBar={(props) => <MyTabBar {...props} />} >
-    
-      <Tabs.Screen name="index" options={{
+    tabBar={(props) => <MyTabBar {...props} />}
+     >
+      <Tabs.Screen name="homeScreen" options={{
           title: 'Chat',
         // tabBarIcon: ({ color }) => (
         //   <Ionicons name='time-outline' size={22} color={color}/>
@@ -35,10 +38,15 @@ export default function TabLayout() {
          // tabBarIcon: ({ color }) => (
       //    <Ionicons name="person-outline" size={22} color={color} />
       //   ),
-        }}
-      />
-
-    </Tabs>
-    
+        }} />
+   
+   </Tabs>  
+   </GestureHandlerRootView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+});
